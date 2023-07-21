@@ -47,4 +47,7 @@ function build {
 # Compile cvm.nim
 build "$srcdir/cvm/cvm.nim"
 
+# Compile cchro.nim
+build "$srcdir/cchro/cchro.nim"
+
 echo "Compiled all files!"

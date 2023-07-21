@@ -1,5 +1,8 @@
+include "../asm/Bytecode.nim"
 
-proc hello(name: string): string =
-    result = "Hello " & name
+proc main() =
+    var prog: Program = LoadFromFile("test.bc")
+    for inst in prog.code:
+        echo inst.InstName, inst.operand
 
-echo(hello("World"))
+main()
