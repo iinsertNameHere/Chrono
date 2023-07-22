@@ -2,3 +2,5 @@ nimcache/
 nimblecache/
 htmldocs/
 dist/
+*.cro
+*.croasm

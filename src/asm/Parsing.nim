@@ -1,10 +1,17 @@
-include "Bytecode.nim"
+import "Bytecode"
+import "../utility/Logger"
+import "DataTypes"
+
+import strutils
 import std/streams
 
 proc ParseLabels(prog: var Program, source: string) =
     prog.code = @[]
     prog.labels = @[]
+
+    var lineNum = 0
     for l in splitLines(source):
+        lineNum += 1
         var line = l.strip()
         if line.len < 1:
             continue
@@ -19,6 +26,10 @@ proc ParseLabels(prog: var Program, source: string) =
         
         var instType = GetInstTypeByName(token[0])
 
+        if token.len < 2 and instType != INST_ERROR:
+            prog.code.add(NewInst(INST_NOP, NewWord(0)))
+            continue
+
         if token.len > 1 and instType != INST_ERROR:
             prog.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
@@ -26,16 +37,20 @@ proc ParseLabels(prog: var Program, source: string) =
         if token.len < 2 and token[0].endsWith(':'):
             var name = token[0]
             name.removeSuffix(':')
-            prog.RegisterLabel(name, prog.code.len)
-            LogDebug("Registerd Label '" & name & "' at addr " & $prog.code.len)
+            prog.RegisterLabel(name, prog.code.len, lineNum)
+            LogDebug("Registerd Label '" & name & "' with addr " & $prog.code.len)
             prog.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
 
-        LogError("\"" & join(token, " ") & "\"" & " could not be Parsed!")
+        LogError("At Line " & $lineNum & ":" & " \"" & join(token, " ") & "\" could not be Parsed!")
+        quit(-1)
 
 proc ParseCode(prog: var Program, source: string) =
     prog.code = @[]
+
+    var lineNum = 0
     for l in splitLines(source):
+        lineNum += 1
         var line = l.strip()
         if line.len < 1:
             continue
@@ -51,7 +66,11 @@ proc ParseCode(prog: var Program, source: string) =
         var instType = GetInstTypeByName(token[0])
 
         if token.len < 2 and instType != INST_ERROR:
-            prog.code.add(NewInst(instType, NewWord(0)))
+            if not (instType in NoArgInsts):
+                var instName = InstName(NewInst(instType, NewWord(0)))
+                LogError("At Line " & $lineNum & ":" & "Instruction '" & instName & "' takes an argument!")
+                quit(-1)
+            prog.code.add(NewInst(instType, NewWord(0))) 
             continue
         
         if token.len < 2 and token[0].endsWith(':'):
@@ -60,25 +79,18 @@ proc ParseCode(prog: var Program, source: string) =
 
         if token.len > 1 and instType != INST_ERROR:
             var inst: Instruction
-
-            case instType:
-                of INST_NOP:
-                    LogError("NOP dose not take a operand!")
-                    quit(-1)
-                of INST_RETURN:
-                    LogError("RETURN dose not take a operand!")
-                    quit(-1)
-                of INST_HALT:
-                    LogError("HALT dose not take a operand!")
-                    quit(-1)
-                else:
-                    inst = NewInst(instType, parseWord(token[1], prog.labels))
+            if instType in NoArgInsts: 
+                var instName = InstName(NewInst(instType, NewWord(0)))
+                LogError("At Line " & $lineNum & ":" & "Instruction '" & instName & "' takes no argument!")
+                quit(-1)
+            inst = NewInst(instType, parseWord(token[1], prog.labels))
             prog.code.add(inst)
             continue
             
-        LogError("\"" & join(token, " ") & "\"" & " could not be Parsed!")
+        LogError("At Line " & $lineNum & ":" & " \"" & join(token, " ") & "\" could not be Parsed!")
+        quit(-1)
 
-proc SourceToProgram(path: string): Program =
+proc SourceToProgram*(path: string): Program =
     var fstrm = newFileStream(path, fmRead)
     var source = fstrm.readAll()
 

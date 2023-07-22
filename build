@@ -26,7 +26,6 @@ fi
 # Building src
 
 echo "## Building Chrono ##"
-echo "For a list of arguments use '-h'"
 echo ""
 
 function build {
@@ -38,16 +37,10 @@ function build {
 
     echo "[Build] Compiling $filename ..."
     nim compile --outdir:$outdir -d:release $srcpath
-
-    if [ arg1 = "$name" ]; then
-        exit
-    fi
 }
 
 # Compile cvm.nim
-build "$srcdir/cvm/cvm.nim"
+build "$srcdir/cvm.nim"
 
-# Compile cchro.nim
-build "$srcdir/cchro/cchro.nim"
-
-echo "Compiled all files!"
+# Compile ccro.nim
+build "$srcdir/ccro.nim"

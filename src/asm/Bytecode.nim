@@ -1,8 +1,9 @@
 import std/streams
 import strutils
-include "DataTypes.nim"
+import DataTypes
+import "../utility/Logger"
 
-type InstructionType = enum
+type InstructionType* = enum
     INST_NOP = 0,
 
     INST_PUSH,
@@ -36,18 +37,20 @@ type InstructionType = enum
 
     INST_ERROR
 
-type Instruction = object
-    instType: InstructionType
-    operand: Word
+const NoArgInsts* = @[INST_NOP, INST_RETURN, INST_HALT]
 
-proc InstName(inst: Instruction): string =
+type Instruction* = object
+    instType*: InstructionType
+    operand*: Word
+
+proc InstName*(inst: Instruction): string =
     result = $repr(inst.instType).split('_')[1]
 
-proc NewInst(instType: InstructionType, operand: Word): Instruction =
+proc NewInst*(instType: InstructionType, operand: Word): Instruction =
     result.instType = instType
     result.operand = operand
 
-proc GetInstTypeByName(name: string): InstructionType =
+proc GetInstTypeByName*(name: string): InstructionType =
     for inst in InstructionType:
         var strrepr = $repr(inst).split('_')[1]
         if name.toUpper() == strrepr:
@@ -55,22 +58,22 @@ proc GetInstTypeByName(name: string): InstructionType =
 
     return INST_ERROR
 
-type Label = object
+type Label* = object
     name: string
     address: int
 
-type Program = object
-    code: seq[Instruction]
-    labels: seq[Label]
+type Program* = object
+    code*: seq[Instruction]
+    labels*: seq[Label]
 
-proc RegisterLabel(prog: var Program, name: string, address: int) =
+proc RegisterLabel*(prog: var Program, name: string, address: int, lineNum: int) =
     var newLabel: Label
     newLabel.name = name
     newLabel.address = address
 
     for l in prog.labels:
         if l.name == newLabel.name:
-            LogError("Label '" & l.name & "' already defined at address " & $l.address)
+            LogError("At Line " & $lineNum & ":" & " Label '" & l.name & "' is already defined!")
             quit(-1)
 
     prog.labels.add(newLabel)
@@ -80,7 +83,7 @@ type MetaData = object
     magic: uint32
     programLength: uint64
 
-proc writeToFile(program: Program, path: string) =
+proc writeToFile*(program: Program, path: string) =
     var meta: MetaData
     meta.version = 1
     meta.magic = 0xEDF5877
@@ -95,7 +98,7 @@ proc writeToFile(program: Program, path: string) =
     for inst in program.code:
         fstrm.write(inst)
 
-proc LoadFromFile(path: string): Program =
+proc LoadFromFile*(path: string): Program =
     var meta: MetaData
 
     var fstrm = newFileStream(path, fmRead)
@@ -110,7 +113,7 @@ proc LoadFromFile(path: string): Program =
         discard fstrm.readData(inst.addr, sizeof(inst))
         result.code.add(inst)
 
-proc parseWord(str: string, labels: seq[Label]): Word =
+proc parseWord*(str: string, labels: seq[Label]): Word =
     var dtype: DataType = DetectDataType(str)
     try:
         var s = str

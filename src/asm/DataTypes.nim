@@ -1,8 +1,8 @@
 import strutils
-include "../logging/Logger.nim"
+import "../utility/Logger"
 
 # Object that holds a value that can be casted to every DataType
-type Word = object
+type Word* = object
     as_numb: int
     as_float: float
     as_bool: bool
@@ -11,7 +11,7 @@ type Word = object
 
 
 # New Word from numb
-proc NewWord(value: int): Word =
+proc NewWord*(value: int): Word =
     result.as_numb = value
     result.as_float = float(value)
     result.as_bool = (if value > 0: true else: false)
@@ -19,7 +19,7 @@ proc NewWord(value: int): Word =
     result.as_byte = byte(value)
 
 # New Word from float
-proc NewWord(value: float): Word =
+proc NewWord*(value: float): Word =
     result.as_numb = int(value)
     result.as_float = value
     result.as_bool = (if result.as_numb > 0: true else: false)
@@ -27,7 +27,7 @@ proc NewWord(value: float): Word =
     result.as_byte = byte(result.as_numb)
 
 # New Word from bool
-proc NewWord(value: bool): Word =
+proc NewWord*(value: bool): Word =
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = value
@@ -35,7 +35,7 @@ proc NewWord(value: bool): Word =
     result.as_byte = byte(result.as_numb)
 
 # New Word from char
-proc NewWord(value: char): Word =
+proc NewWord*(value: char): Word =
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = (if result.as_numb > 0: true else: false)
@@ -43,7 +43,7 @@ proc NewWord(value: char): Word =
     result.as_byte = byte(result.as_numb)
 
 # New Word from byte
-proc NewWord(value: byte): Word =
+proc NewWord*(value: byte): Word =
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = (if result.as_numb > 0: true else: false)
@@ -52,13 +52,13 @@ proc NewWord(value: byte): Word =
 
 # Type that holds a array of Words
 # Size: 1024
-type Stack = array[1024, Word]
+type Stack* = array[1024, Word]
 
 # Type that holds and array of Bytes
 # Size: 512 KB
-type Memory = array[512000, byte]
+type Memory* = array[512000, byte]
 
-type DataType = enum
+type DataType* = enum
     NullType,
     Numb,
     Float,
@@ -66,7 +66,7 @@ type DataType = enum
     Char,
     Byte,
 
-proc DetectDataType(str: string): DataType =
+proc DetectDataType*(str: string): DataType =
     if str.endsWith('i'):
         try:
             var s = str
