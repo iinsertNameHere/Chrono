@@ -1,4 +1,5 @@
 import "asm/Parsing"
+import "asm/Bytecode"
 import "utility/Logger"
 
 import strutils

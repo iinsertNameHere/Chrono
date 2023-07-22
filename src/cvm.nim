@@ -37,7 +37,7 @@ proc ParseArgs(args: var Args) =
                         help()
                         quit(-1)
 
-                    if splitFile(parser.key).ext != ".croasm":
+                    if splitFile(parser.key).ext != ".cro":
                         LogError("Program File is not a Chrono-Binary (.cro) file!")
                         quit(-1)
 
