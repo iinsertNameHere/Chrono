@@ -1,19 +1,16 @@
 import "../asm/DataTypes"
 import "../asm/Bytecode"
 
-# Virtual Machine definition
 type CVM* = object
-    stack: Stack
-    stackSize: uint
+    ## Virtual Machine that holds a Stack, a program, a programSize and a memory 
+    stack*: Stack
 
-    program: Program
-    codeSize: uint
+    program*: Program
+    programSize: uint
 
-    memory: Memory
-    memorySize: uint
+    memory*: Memory
 
 proc CreateCVM*(program: Program): CVM =
-    result.stackSize = 0
+    ## Function that Creates a new CVM instance
     result.program = program
-    result.codeSize = uint(program.code.len)
-    result.memorySize = 0
+    result.programSize = uint(program.len)

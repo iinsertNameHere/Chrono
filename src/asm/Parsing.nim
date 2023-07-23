@@ -5,103 +5,219 @@ import "DataTypes"
 import strutils
 import std/streams
 
-proc ParseLabels(prog: var Program, source: string) =
-    prog.code = @[]
-    prog.labels = @[]
+type TokenType = enum
+    ## All Token Types suported by croasm
+    NoOperandInstructionToken
+    InstructionToken
+    CommentToken
+    EmptyToken
+    LabelToken
+    UnknownToken
+    StringToken
 
+type Token = object
+    ## Object that hold an identifier string, an addon string and a TokenType
+    identifier: string
+    addon: string
+    tType: TokenType 
+
+proc Tokenize(str: string, lineNum: int): Token =
+    ## Parses a Token contained in 'str'
+    ## If str empty or starts with comment symbol:
+    ##    Return: Token of type EmptyToken
+    ## Else If str is valid token:
+    ##    Return: Token with correct type
+    ## Else: 
+    ##    Return: Token of type UnknowToken
+    
+    # Check if token empty or starts with '#'
+    if str.len < 1 or str.startsWith('#'):
+        result.tType = EmptyToken
+        return
+
+    # Check if Token is StringToken
+    if str.startsWith("@\"") and str.endsWith('"'):
+        if str.len < 4:
+            LogError("At Line " & $lineNum & ": " & "String is empty and could not be Parsed!")
+            quit(-1)
+
+        result.tType = StringToken
+        result.identifier = "@"
+
+        result.addon = str
+        result.addon.removePrefix("@\"")
+        result.addon.removeSuffix('"')
+        return
+    
+    # Spliting str to token
+    var token = str.split(' ')
+    if token.len > 2:
+        token = token[0..1]
+
+    if token.len < 1:
+        result.tType = EmptyToken
+        return
+
+    # Getting InstructionType. If not a instruction, instType = INST_ERROR
+    var instType = GetInstTypeByName(token[0])
+    
+    # If str only has one part and is valid inst,
+    # Return NoOperandInstructionToken 
+    if token.len < 2 and instType != INST_ERROR:
+        result.identifier = token[0]
+        result.tType = NoOperandInstructionToken
+
+    # If str only has more one part and is valid inst,
+    # Return InstructionToken 
+    elif token.len > 1 and instType != INST_ERROR:
+        result.identifier = token[0]
+        result.addon = token[1]
+        result.tType = InstructionToken
+    
+    # Check if token is LabelToken
+    elif token.len < 2 and token[0].endsWith(':'):
+        var name = token[0]
+        name.removeSuffix(':')
+        result.identifier = name
+        result.addon = ":"
+        result.tType = LabelToken
+    
+    # Token is not Valid
+    else:
+        result.tType = UnknownToken
+        LogError("At Line " & $lineNum & ": " & "\"" & str & "\" could not be Parsed!")
+        quit(-1)
+
+    
+proc PreParse(bytecode: var Bytecode, source: string) =
+    ## Functions that Parses Labels
+    bytecode.code = @[]
+    bytecode.labels = @[]
+
+    ## Iterate lines of the source code
     var lineNum = 0
     for l in splitLines(source):
         lineNum += 1
         var line = l.strip()
-        if line.len < 1:
+        
+        # Tokenize current line
+        var token: Token = Tokenize(line, lineNum)
+        
+        # If EmptyToken, skip
+        if token.tType == EmptyToken:
             continue
         
-        if line.startsWith('#'):
-            continue
-
-        var token = line.split(' ')
-
-        if token.len < 1:
+        # If StringToken, skip
+        if token.tType == StringToken:
+            for c in token.addon:
+                bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
         
-        var instType = GetInstTypeByName(token[0])
+        # If InstructionToken, skip
+        elif token.tType == NoOperandInstructionToken or token.tType == InstructionToken:
+            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
+            continue
+        
+        # If LabelToken, register new label
+        elif token.tType == LabelToken:
+            if GetInstTypeByName(token.identifier) != INST_ERROR:
+                LogError("At Line " & $lineNum & ": " & token.identifier & " is an Instruction and can't be used as Label!")
+                quit(-1)
 
-        if token.len < 2 and instType != INST_ERROR:
-            prog.code.add(NewInst(INST_NOP, NewWord(0)))
+            const invalidLabelChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789[]()_-"
+            for c in token.identifier.toUpper:
+                if not (c in invalidLabelChars):
+                    LogError("At Line " & $lineNum & ": " & c & " can't be used in Label names!")
+                    quit(-1)
+
+            bytecode.RegisterLabel(token.identifier, bytecode.code.len, lineNum)
+            LogDebug("Registerd Label '" & token.identifier & "' with addr " & $bytecode.code.len)
+            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
 
-        if token.len > 1 and instType != INST_ERROR:
-            prog.code.add(NewInst(INST_NOP, NewWord(0)))
+proc ParseString(bytecode: var Bytecode, str: string, lineNum: int) =
+    ## Function parses a string to "push char" instructions
+    var skipNext: bool = false
+
+    # Iterate string
+    for i in countUp(0, str.len - 1):
+        # If skipNext, skip
+        if skipNext:
+            skipNext = false
             continue
 
-        if token.len < 2 and token[0].endsWith(':'):
-            var name = token[0]
-            name.removeSuffix(':')
-            prog.RegisterLabel(name, prog.code.len, lineNum)
-            LogDebug("Registerd Label '" & name & "' with addr " & $prog.code.len)
-            prog.code.add(NewInst(INST_NOP, NewWord(0)))
-            continue
+        # Get char by index i
+        var c = str[i]
 
-        LogError("At Line " & $lineNum & ":" & " \"" & join(token, " ") & "\" could not be Parsed!")
-        quit(-1)
+        # Handle Escaped Chars
+        if c == '\\' and i < str.len:
+            c = parseEscapedChar(str[i..i+1], lineNum)
+            skipNext = true
 
-proc ParseCode(prog: var Program, source: string) =
-    prog.code = @[]
+        bytecode.code.add(NewInst(INST_PUSH, NewWord(c)))
 
+proc Parse(bytecode: var Bytecode, source: string) =
+    ## Function that Parses source code to Bytecode
+    bytecode.code = @[]
+
+    ## Iterate lines of the source code
     var lineNum = 0
     for l in splitLines(source):
         lineNum += 1
         var line = l.strip()
-        if line.len < 1:
-            continue
 
-        if line.startsWith('#'):
-            continue
+        # Tokenize line
+        var token: Token = Tokenize(line, lineNum)
 
-        var token = line.split(' ')
+        # Get instructionType of token identifier
+        var instType = GetInstTypeByName(token.identifier)
         
-        if token.len < 1:
-            continue
-
-        var instType = GetInstTypeByName(token[0])
-
-        if token.len < 2 and instType != INST_ERROR:
-            if not (instType in NoArgInsts):
-                var instName = InstName(NewInst(instType, NewWord(0)))
-                LogError("At Line " & $lineNum & ":" & "Instruction '" & instName & "' takes an argument!")
-                quit(-1)
-            prog.code.add(NewInst(instType, NewWord(0))) 
+        # If EmptyToken, skip
+        if token.tType == EmptyToken:
             continue
         
-        if token.len < 2 and token[0].endsWith(':'):
-            prog.code.add(NewInst(INST_NOP, NewWord(0)))
+        # If StringToken, ParseString
+        if token.tType == StringToken:
+            bytecode.ParseString(token.addon, lineNum)
             continue
 
-        if token.len > 1 and instType != INST_ERROR:
-            var inst: Instruction
-            if instType in NoArgInsts: 
-                var instName = InstName(NewInst(instType, NewWord(0)))
-                LogError("At Line " & $lineNum & ":" & "Instruction '" & instName & "' takes no argument!")
+        # If No Operand InstructionToken, add Instruction without operand
+        elif token.tType == NoOperandInstructionToken:
+            if not (instType in NoOperandInsts):
+                LogError("At Line " & $lineNum & ":" & "Instruction '" & token.identifier.toUpper() & "' takes an argument!")
                 quit(-1)
-            inst = NewInst(instType, parseWord(token[1], prog.labels))
-            prog.code.add(inst)
+            bytecode.code.add(NewInst(instType, NewWord(0))) 
             continue
-            
-        LogError("At Line " & $lineNum & ":" & " \"" & join(token, " ") & "\" could not be Parsed!")
-        quit(-1)
 
-proc SourceToProgram*(path: string): Program =
+        # If InstructionToken, add Instruction with operand
+        elif token.tType == InstructionToken:
+            if (instType in NoOperandInsts): 
+                LogError("At Line " & $lineNum & ":" & "Instruction '" & token.identifier.toUpper() & "' takes no argument!")
+                quit(-1)
+            bytecode.code.add(NewInst(instType, parseWord(token.addon, bytecode.labels, lineNum)))
+            continue
+
+        # If LabelToken, skip
+        elif token.tType == LabelToken:
+            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
+            continue
+
+proc ParseSourceFile*(path: string): Bytecode =
     var fstrm = newFileStream(path, fmRead)
+    if isNil(fstrm):
+        LogError("Could not open File Stream to file: '" & path & "'!")
+        quit(-1)
+
     var source = fstrm.readAll()
 
     if source.len < 1:
         LogError("Source file is Empty!")
         quit(-1)
 
-    LogDebug("Parsing Labels...")
-    result.ParseLabels(source)
+    LogDebug("Running PreParser...")
+    result.PreParse(source)
 
-    LogDebug("Parsing Code...")
-    result.ParseCode(source)
+    LogDebug("Parsing...")
+    result.Parse(source)
 
     LogDebug("Parsing finished...")

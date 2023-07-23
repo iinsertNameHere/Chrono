@@ -1,119 +1,175 @@
 import strutils
 import "../utility/Logger"
 
-# Object that holds a value that can be casted to every DataType
 type Word* = object
-    as_numb: int
-    as_float: float
-    as_bool: bool
-    as_char: char
-    as_byte: byte
+    ## Object that holds a value that can be casted to every DataType
+    as_numb*: int
+    as_float*: float
+    as_bool*: bool
+    as_char*: char
+    as_byte*: byte
+    fromStack*: bool
 
 
-# New Word from numb
 proc NewWord*(value: int): Word =
+    ## New Word from numb
     result.as_numb = value
     result.as_float = float(value)
     result.as_bool = (if value > 0: true else: false)
     result.as_char = char(value)
     result.as_byte = byte(value)
 
-# New Word from float
 proc NewWord*(value: float): Word =
+    ## New Word from float
     result.as_numb = int(value)
     result.as_float = value
     result.as_bool = (if result.as_numb > 0: true else: false)
     result.as_char = char(result.as_numb)
     result.as_byte = byte(result.as_numb)
 
-# New Word from bool
 proc NewWord*(value: bool): Word =
+    ## New Word from bool
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = value
     result.as_char = char(result.as_numb)
     result.as_byte = byte(result.as_numb)
 
-# New Word from char
 proc NewWord*(value: char): Word =
+    ## New Word from char
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = (if result.as_numb > 0: true else: false)
     result.as_char = value
     result.as_byte = byte(result.as_numb)
 
-# New Word from byte
 proc NewWord*(value: byte): Word =
+    ## New Word from byte
     result.as_numb = int(value)
     result.as_float = float(result.as_numb)
     result.as_bool = (if result.as_numb > 0: true else: false)
     result.as_char = char(result.as_numb)
     result.as_byte = value
 
-# Type that holds a array of Words
-# Size: 1024
-type Stack* = array[1024, Word]
+proc NewFromStackWord*(): Word =
+    # New Word from stack
+    result.fromStack = true
 
-# Type that holds and array of Bytes
-# Size: 512 KB
-type Memory* = array[512000, byte]
+# Type that holds an array of Words
+type Stack* = seq[Word]
+
+proc PushBack*(s: var Stack, value: Word) =
+    ## Function that adds a value, just like `add`, but
+    ## insted of appending it adds the value at index 0 and pushes back
+    ## all other values 
+    s = @[value] & s
+
+# Type that holds an array of bytes
+type Memory* = seq[byte]
 
 type DataType* = enum
+    ## All croasm datatypes
     NullType,
     Numb,
     Float,
     Bool,
     Char,
+    EscapedChar,
     Byte,
 
-proc DetectDataType*(str: string): DataType =
+# Constant that holds all valid Escaped Chars
+const EscabedChars* = @["n", "r", "t", "b", "'", "\"", "s"]
+
+
+proc parseEscapedChar*(str: string, lineNum: int): char =
+    ## Parses a Escaped char contained on `str`
+    var charStr = str
+    charStr.removePrefix('\\')
+    case charStr:
+        of "n":
+            result = '\n'
+        of "r":
+            result = '\r'
+        of "t":
+            result = '\t'
+        of "b":
+            result = '\b'
+        of "'":
+            result = '\''
+        of "\"":
+            result = '"'
+        of "s":
+            result = ' '
+        else:
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Escabed Char!")
+            quit(-1)
+
+
+proc DetectDataType*(str: string, lineNum: int): DataType =
+    ## Detectes the DataType of the value containes in `str`
+    
     if str.endsWith('i'):
+        # Checks if valid numb
         try:
             var s = str
             s.removeSuffix('i')
             discard parseInt(s)
             return Numb
         except:
-            LogError(str & " is not a valid Numb!")
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Numb!")
             quit(-1)
     elif str.endsWith('f') and not str.startsWith("0x"):
+        # Checks if valid float
         try:
             var s = str
             s.removeSuffix('f')
             discard parseFloat(s)
             return Float
         except:
-            LogError(str & " is not a valid Float!")
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Float!")
             quit(-1)
     elif str == "true" or str == "false":
+        # Checks if valid bool
         return Bool
     elif str.startsWith('\'') and str.endsWith('\''):
+        # Checks if valid char
         try:
             var s = str
             s.removePrefix('\'')
             s.removeSuffix('\'')
+
+            if s.startsWith('\\') and s.len > 1:
+                s.removePrefix('\\')
+
+                # Checks if Escaped Char is valid    
+                discard parseEscapedChar(s, lineNum)
+                return EscapedChar
+
             if s.len > 1:
                 raise
+                
             discard char(s[0])
             return Char
         except:
-            LogError(str & " is not a valid Char!")
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Char!")
             quit(-1)
     elif str.startsWith("0x"):
+        # Checks if valid hex numb
         try:
             discard parseHexInt(str)
             return Numb
         except:
-            LogError(str & " is not a valid Numb!")
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Numb!")
             quit(-1)
     elif str.endsWith('b'):
+        # Checks if valid byte
         try:
             var s = str
             s.removeSuffix('b')
             discard byte(parseInt(s))
             return Byte
         except:
-            LogError(str & " is not a valid Byte!")
+            LogError("At Line " & $lineNum & ": " & str & " is not a valid Byte!")
             quit(-1)
     else:
         return NullType
