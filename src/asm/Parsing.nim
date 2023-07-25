@@ -21,6 +21,8 @@ type Token = object
     addon: string
     tType: TokenType 
 
+const CommentChar: char = ';'
+
 proc Tokenize(str: string, lineNum: int): Token =
     ## Parses a Token contained in 'str'
     ## If str empty or starts with comment symbol:
@@ -30,8 +32,9 @@ proc Tokenize(str: string, lineNum: int): Token =
     ## Else: 
     ##    Return: Token of type UnknowToken
     
-    # Check if token empty or starts with '#'
-    if str.len < 1 or str.startsWith('#'):
+    # Check if token empty or starts with CommentChar
+
+    if str.len < 1 or str.startsWith(CommentChar):
         result.tType = EmptyToken
         return
 
@@ -53,7 +56,7 @@ proc Tokenize(str: string, lineNum: int): Token =
     var token = str.split(' ')
     if token.len > 2:
         token = token[0..1]
-
+    
     if token.len < 1:
         result.tType = EmptyToken
         return
@@ -75,7 +78,7 @@ proc Tokenize(str: string, lineNum: int): Token =
         result.tType = InstructionToken
     
     # Check if token is LabelToken
-    elif token.len < 2 and token[0].endsWith(':'):
+    elif token[0].endsWith(':'):
         var name = token[0]
         name.removeSuffix(':')
         result.identifier = name
@@ -88,6 +91,31 @@ proc Tokenize(str: string, lineNum: int): Token =
         LogError("At Line " & $lineNum & ": " & "\"" & str & "\" could not be Parsed!")
         quit(-1)
 
+proc ParseString(bytecode: var Bytecode, str: string, lineNum: int) =
+    ## Function parses a string to "push char" instructions
+    var skipNext: bool = false
+
+    # Iterate string
+    var finalString: string
+
+    for i in countup(0, str.len - 1):
+        # If skipNext, skip
+        if skipNext:
+            skipNext = false
+            continue
+
+        # Get char by index i
+        var c = str[i]
+
+        # Handle Escaped Chars
+        if c == '\\' and i < str.len:
+            c = parseEscapedChar(str[i..i+1], lineNum)
+            skipNext = true
+
+        finalString &= c
+
+    for i in countdown(finalString.len - 1, 0):
+        bytecode.code.add(NewInst(INST_PUSH, NewWord(finalString[i])))
     
 proc PreParse(bytecode: var Bytecode, source: string) =
     ## Functions that Parses Labels
@@ -109,8 +137,7 @@ proc PreParse(bytecode: var Bytecode, source: string) =
         
         # If StringToken, skip
         if token.tType == StringToken:
-            for c in token.addon:
-                bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
+            bytecode.ParseString(token.addon, lineNum)
             continue
         
         # If InstructionToken, skip
@@ -124,7 +151,7 @@ proc PreParse(bytecode: var Bytecode, source: string) =
                 LogError("At Line " & $lineNum & ": " & token.identifier & " is an Instruction and can't be used as Label!")
                 quit(-1)
 
-            const invalidLabelChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789[]()_-"
+            const invalidLabelChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[]()_-"
             for c in token.identifier.toUpper:
                 if not (c in invalidLabelChars):
                     LogError("At Line " & $lineNum & ": " & c & " can't be used in Label names!")
@@ -132,29 +159,7 @@ proc PreParse(bytecode: var Bytecode, source: string) =
 
             bytecode.RegisterLabel(token.identifier, bytecode.code.len, lineNum)
             LogDebug("Registerd Label '" & token.identifier & "' with addr " & $bytecode.code.len)
-            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
-
-proc ParseString(bytecode: var Bytecode, str: string, lineNum: int) =
-    ## Function parses a string to "push char" instructions
-    var skipNext: bool = false
-
-    # Iterate string
-    for i in countUp(0, str.len - 1):
-        # If skipNext, skip
-        if skipNext:
-            skipNext = false
-            continue
-
-        # Get char by index i
-        var c = str[i]
-
-        # Handle Escaped Chars
-        if c == '\\' and i < str.len:
-            c = parseEscapedChar(str[i..i+1], lineNum)
-            skipNext = true
-
-        bytecode.code.add(NewInst(INST_PUSH, NewWord(c)))
 
 proc Parse(bytecode: var Bytecode, source: string) =
     ## Function that Parses source code to Bytecode
@@ -199,7 +204,6 @@ proc Parse(bytecode: var Bytecode, source: string) =
 
         # If LabelToken, skip
         elif token.tType == LabelToken:
-            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
             continue
 
 proc ParseSourceFile*(path: string): Bytecode =

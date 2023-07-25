@@ -36,7 +36,8 @@ function build {
     local name="${parts[0]}"
 
     echo "[Build] Compiling $filename ..."
-    nim compile --outdir:$outdir -d:release $srcpath
+    # nim compile --outdir:$outdir -d:release $srcpath
+    nim compile --outdir:$outdir $srcpath
 }
 
 # Compile cvm.nim

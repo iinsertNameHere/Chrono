@@ -7,7 +7,6 @@ type Word* = object
     as_float*: float
     as_bool*: bool
     as_char*: char
-    as_byte*: byte
     fromStack*: bool
 
 
@@ -16,16 +15,26 @@ proc NewWord*(value: int): Word =
     result.as_numb = value
     result.as_float = float(value)
     result.as_bool = (if value > 0: true else: false)
-    result.as_char = char(value)
-    result.as_byte = byte(value)
+    
+    if result.as_numb > 127:
+        result.as_char = char(127)
+    elif result.as_numb < 0:
+        result.as_char = char(0)
+    else:
+        result.as_char = char(result.as_numb)
 
 proc NewWord*(value: float): Word =
     ## New Word from float
     result.as_numb = int(value)
     result.as_float = value
     result.as_bool = (if result.as_numb > 0: true else: false)
-    result.as_char = char(result.as_numb)
-    result.as_byte = byte(result.as_numb)
+
+    if result.as_numb > 127:
+        result.as_char = char(127)
+    elif result.as_numb < 0:
+        result.as_char = char(0)
+    else:
+        result.as_char = char(result.as_numb)
 
 proc NewWord*(value: bool): Word =
     ## New Word from bool
@@ -33,7 +42,6 @@ proc NewWord*(value: bool): Word =
     result.as_float = float(result.as_numb)
     result.as_bool = value
     result.as_char = char(result.as_numb)
-    result.as_byte = byte(result.as_numb)
 
 proc NewWord*(value: char): Word =
     ## New Word from char
@@ -41,15 +49,6 @@ proc NewWord*(value: char): Word =
     result.as_float = float(result.as_numb)
     result.as_bool = (if result.as_numb > 0: true else: false)
     result.as_char = value
-    result.as_byte = byte(result.as_numb)
-
-proc NewWord*(value: byte): Word =
-    ## New Word from byte
-    result.as_numb = int(value)
-    result.as_float = float(result.as_numb)
-    result.as_bool = (if result.as_numb > 0: true else: false)
-    result.as_char = char(result.as_numb)
-    result.as_byte = value
 
 proc NewFromStackWord*(): Word =
     # New Word from stack
@@ -58,7 +57,7 @@ proc NewFromStackWord*(): Word =
 # Type that holds an array of Words
 type Stack* = seq[Word]
 
-proc PushBack*(s: var Stack, value: Word) =
+proc PushBack*(s: var seq, value: auto) =
     ## Function that adds a value, just like `add`, but
     ## insted of appending it adds the value at index 0 and pushes back
     ## all other values 
@@ -75,7 +74,6 @@ type DataType* = enum
     Bool,
     Char,
     EscapedChar,
-    Byte,
 
 # Constant that holds all valid Escaped Chars
 const EscabedChars* = @["n", "r", "t", "b", "'", "\"", "s"]
@@ -160,16 +158,6 @@ proc DetectDataType*(str: string, lineNum: int): DataType =
             return Numb
         except:
             LogError("At Line " & $lineNum & ": " & str & " is not a valid Numb!")
-            quit(-1)
-    elif str.endsWith('b'):
-        # Checks if valid byte
-        try:
-            var s = str
-            s.removeSuffix('b')
-            discard byte(parseInt(s))
-            return Byte
-        except:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Byte!")
             quit(-1)
     else:
         return NullType

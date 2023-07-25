@@ -13,23 +13,29 @@ type InstructionType* = enum
     INST_DEL,
 
     INST_ADD,
-    INST_MIN,
+    INST_SUB,
     INST_MUL,
     INST_DIV,
     INST_MOD,
+    INST_STR,
 
-    INST_AND,
-    INST_OR,
+    INST_BAND,
+    INST_BOR,
     INST_XOR,
     INST_SHL,
     INST_SHR,
 
     INST_JUMP,
+    INST_AND,
+    INST_OR,
     INST_JUMPC,
     INST_CALL,
+    INST_CALLC,
     INST_OUTPUT,
+    INST_DUMP,
     INST_RETURN,
-    INST_LEN
+    INST_LEN,
+    
 
     INST_EQUAL,
     INST_NOT,
@@ -44,7 +50,7 @@ type InstructionType* = enum
     INST_ERROR
 
 # Constant that holds all Instructions that take no operand
-const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT]
+const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT, INST_LEN]
 
 type Instruction* = object
     ## Croasm Instruction
@@ -211,10 +217,6 @@ proc parseWord*(str: string, labels: seq[Label], lineNum: int): Word =
                 s.removePrefix('\'')
                 s.removeSuffix('\'')
                 result = NewWord(parseEscapedChar(s, lineNum))
-            of Byte:
-                # Parsing str to byte
-                s.removeSuffix('b')
-                result = NewWord(byte(parseInt(s)))
             of NullType:
                 # Checking if str is a label
                 var found = false
