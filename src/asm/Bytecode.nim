@@ -92,7 +92,8 @@ proc GetInstTypeByName*(name: string): InstructionType =
 type Label* = object
     ## Label object that hold the name and location of the label in the program (used in execution)
     name: string
-    address: int
+    address: uint
+    line: uint
 
 type Program* = seq[Instruction]
 ## A list of Instructions
@@ -102,18 +103,19 @@ type Bytecode* = object
     code*: Program
     labels*: seq[Label]
 
-proc RegisterLabel*(bytecode: var Bytecode, name: string, address: int, lineNum: int) =
+proc RegisterLabel*(bytecode: var Bytecode, name: string, address: uint) =
     ## Registers a new label in the Bytecode
 
     # Creating a new Label and setting name and address
     var newLabel: Label
     newLabel.name = name
     newLabel.address = address
+    newLabel.line = CurrentFilePosition.currentLine
 
     # Checking that label dose not already exists
     for l in bytecode.labels:
         if l.name == newLabel.name:
-            LogError("At Line " & $lineNum & ":" & " Label '" & l.name & "' is already defined!")
+            LogError(" Label \"$#\" is already registerd at line $#!" % @[l.name, $l.line], true)
             quit(-1)
 
     # Adding label
@@ -142,7 +144,7 @@ proc WriteToFile*(bytecode: Bytecode, path: string) =
     # Creating new File Stream
     var fstrm = newFileStream(path, fmWrite)
     if isNil(fstrm):
-        LogError("Could not open File Stream to file: '" & path & "'!")
+        LogError("Could not open File Stream to file: '$#'!" % (path))
         quit(-1)
     
     # Writing MetaData
@@ -163,7 +165,7 @@ proc LoadProgramFromFile*(path: string): Program =
     # Creating new File Stream
     var fstrm = newFileStream(path, fmRead)
     if isNil(fstrm):
-        LogError("Could not open File Stream to file: '" & path & "'!")
+        LogError("Could not open File Stream to file: '$#'!" % (path))
         quit(-1)
     
     # Validating file MetaData
@@ -187,11 +189,11 @@ proc LoadProgramFromFile*(path: string): Program =
 
     fstrm.close()
 
-proc parseWord*(str: string, labels: seq[Label], lineNum: int): Word =
+proc parseWord*(str: string, labels: seq[Label]): Word =
     ## Parses a Word value contained in `sts`
 
     # Getting DataType
-    var dtype: DataType = DetectDataType(str, lineNum)
+    var dtype: DataType = DetectDataType(str)
     try:
         var s = str
         case dtype:
@@ -220,13 +222,13 @@ proc parseWord*(str: string, labels: seq[Label], lineNum: int): Word =
                 # Parsing str to Escaped Char
                 s.removePrefix('\'')
                 s.removeSuffix('\'')
-                result = NewWord(parseEscapedChar(s, lineNum))
+                result = NewWord(parseEscapedChar(s))
             of NullType:
                 # Checking if str is a label
                 var found = false
                 for l in labels:
                     if l.name == s:
-                        result = NewWord(l.address)
+                        result = NewWord(int(l.address))
                         found = true
                         break
                 # Checking if str is a FromStackWord and should be taken from the first stack possition as Runtime
@@ -234,11 +236,11 @@ proc parseWord*(str: string, labels: seq[Label], lineNum: int): Word =
                     result = NewFromStackWord()
 
                 elif not found:
-                    LogError("At Line " & $lineNum & ": " & "DataType of '" & s & "' is unknown!")
+                    LogError("DataType of '$#' is unknown!" % (s), true)
                     quit(-1)
                 
     except Exception as e:
         if e.name == "RangeDefect":
             # If value to big: ERROR
-            LogError("At Line " & $lineNum & ": " & str & " value out of range!\n")
+            LogError("'$#' value out of range!" % (str), true)
             quit(-1)

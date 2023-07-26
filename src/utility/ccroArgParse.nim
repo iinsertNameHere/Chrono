@@ -41,12 +41,12 @@ proc ParseArgs*(args: var Args) =
                         args.debug = true
                     of "o", "output": # -o and --output
                         if parser.val.strip() == "":
-                            LogError(parser.key & "Missing Output File")
+                            LogError("Missing Output File!")
                             help()
                             quit(-1)
                         args.outputFile = parser.val
                     else:
-                        LogError("Unknown Option '" & parser.key & "'")
+                        LogError("Unknown Option '$#'" % (parser.key))
                         help()
                         quit(-1)
             of cmdArgument: # positional args
@@ -63,7 +63,7 @@ proc ParseArgs*(args: var Args) =
                     args.sourceFile = parser.key
 
     if args.sourceFile.strip() == "":
-        LogError("MissingSource File!")
+        LogError("Missing Source File!")
         help()
         quit(-1)
 

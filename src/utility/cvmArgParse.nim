@@ -1,6 +1,7 @@
 import "Logger"
 
 import std/parseopt
+import strutils
 import os
 
 type Args* = object
@@ -35,7 +36,7 @@ proc ParseArgs*(args: var Args) =
                     of "d", "decompile": # -d and --decompile
                         args.decompile = true
                     else:
-                        LogError("Unknown Option '" & parser.key & "'")
+                        LogError("Unknown Option \"$#\"" % (parser.key))
                         help()
                         quit(-1)
             of cmdArgument: # positional args

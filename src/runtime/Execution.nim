@@ -4,6 +4,7 @@ import "../utility/Logger"
 import "../asm/Bytecode"
 
 import std/streams
+import strutils
 
 proc Run*(cvm: var CVM) =
     ## Function that executes the loaded .cro program
@@ -84,7 +85,7 @@ proc Run*(cvm: var CVM) =
             of INST_HALT:
                 break
             else:
-                LogError("No Function for Instruction " & inst.InstName)
+                LogError("No Function defined for Instruction \"$#\"" % (inst.InstName))
                 quit(-1)
 
 proc hasDecimals(f: float): bool =
@@ -96,7 +97,7 @@ proc Decompile*(cvm: CVM, path: string)=
 
     var fstrm = newFileStream(path, fmWrite)
     if isNil(fstrm):
-        LogError("Could not open File Stream to file: '" & path & "'!")
+        LogError("Could not open File Stream to file: '$#'!" % (path))
         quit(-1)
 
     LogInfo("Decompiling Program...")
@@ -106,11 +107,11 @@ proc Decompile*(cvm: CVM, path: string)=
             fstrm.writeLine(inst.InstName)
         else:
             if inst.operand.fromStack:
-                fstrm.writeLine(inst.InstName & " $")
+                fstrm.writeLine("$# $" % (inst.InstName))
             elif inst.operand.as_float.hasDecimals():
-                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_float & "f")
+                fstrm.writeLine("$# $#f" % @[inst.InstName, $inst.operand.as_float])
             else:
-                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_int & "i")
+                fstrm.writeLine("$# $#i" % @[inst.InstName, $inst.operand.as_int])
 
     LogSuccess("Decompiled to '" & path & "'!")
 

@@ -78,7 +78,7 @@ type DataType* = enum
 const EscabedChars* = @["n", "r", "t", "b", "'", "\"", "s"]
 
 
-proc parseEscapedChar*(str: string, lineNum: int): char =
+proc parseEscapedChar*(str: string): char =
     ## Parses a Escaped char contained on `str`
     var charStr = str
     charStr.removePrefix('\\')
@@ -98,22 +98,22 @@ proc parseEscapedChar*(str: string, lineNum: int): char =
         of "s":
             result = ' '
         else:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Escabed Char!")
+            LogError("'$#' is not a valid Escabed Char!" % (str), true)
             quit(-1)
 
 
-proc DetectDataType*(str: string, lineNum: int): DataType =
+proc DetectDataType*(str: string): DataType =
     ## Detectes the DataType of the value containes in `str`
     
     if str.endsWith('i'):
-        # Checks if valid numb
+        # Checks if valid int
         try:
             var s = str
             s.removeSuffix('i')
             discard parseInt(s)
             return Numb
         except:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Numb!")
+            LogError("'$#' is not a valid Int!" % (str), true)
             quit(-1)
     elif str.endsWith('f') and not str.startsWith("0x"):
         # Checks if valid float
@@ -123,7 +123,7 @@ proc DetectDataType*(str: string, lineNum: int): DataType =
             discard parseFloat(s)
             return Float
         except:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Float!")
+            LogError("'$#' is not a valid Float!" % (str), true)
             quit(-1)
     elif str == "true" or str == "false":
         # Checks if valid bool
@@ -139,7 +139,7 @@ proc DetectDataType*(str: string, lineNum: int): DataType =
                 s.removePrefix('\\')
 
                 # Checks if Escaped Char is valid    
-                discard parseEscapedChar(s, lineNum)
+                discard parseEscapedChar(s)
                 return EscapedChar
 
             if s.len > 1:
@@ -148,15 +148,15 @@ proc DetectDataType*(str: string, lineNum: int): DataType =
             discard char(s[0])
             return Char
         except:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Char!")
+            LogError("$# is not a valid Char!" % (str), true)
             quit(-1)
     elif str.startsWith("0x"):
-        # Checks if valid hex numb
+        # Checks if valid hex int
         try:
             discard parseHexInt(str)
             return Numb
         except:
-            LogError("At Line " & $lineNum & ": " & str & " is not a valid Numb!")
+            LogError("'$#' is not a valid hex Int!" % (str), true)
             quit(-1)
     else:
         return NullType

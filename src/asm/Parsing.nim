@@ -4,6 +4,7 @@ import "DataTypes"
 
 import strutils
 import std/streams
+import os
 
 type TokenType = enum
     ## All Token Types suported by croasm
@@ -23,7 +24,7 @@ type Token = object
 
 const CommentChar: char = ';'
 
-proc Tokenize(str: string, lineNum: int): Token =
+proc Tokenize(str: string): Token =
     ## Parses a Token contained in 'str'
     ## If str empty or starts with comment symbol:
     ##    Return: Token of type EmptyToken
@@ -41,7 +42,7 @@ proc Tokenize(str: string, lineNum: int): Token =
     # Check if Token is StringToken
     if str.startsWith("@\"") and str.endsWith('"'):
         if str.len < 4:
-            LogError("At Line " & $lineNum & ": " & "String is empty and could not be Parsed!")
+            LogError("String is empty and could not be Parsed!", true)
             quit(-1)
 
         result.tType = StringToken
@@ -88,10 +89,10 @@ proc Tokenize(str: string, lineNum: int): Token =
     # Token is not Valid
     else:
         result.tType = UnknownToken
-        LogError("At Line " & $lineNum & ": " & "\"" & str & "\" could not be Parsed!")
+        LogError("Line could not be Parsed!", true)
         quit(-1)
 
-proc ParseString(bytecode: var Bytecode, str: string, lineNum: int) =
+proc ParseString(bytecode: var Bytecode, str: string) =
     ## Function parses a string to "push char" instructions
     var skipNext: bool = false
 
@@ -109,7 +110,7 @@ proc ParseString(bytecode: var Bytecode, str: string, lineNum: int) =
 
         # Handle Escaped Chars
         if c == '\\' and i < str.len:
-            c = parseEscapedChar(str[i..i+1], lineNum)
+            c = parseEscapedChar(str[i..i+1])
             skipNext = true
 
         finalString &= c
@@ -123,13 +124,15 @@ proc PreParse(bytecode: var Bytecode, source: string) =
     bytecode.labels = @[]
 
     ## Iterate lines of the source code
-    var lineNum = 0
+    var lineIndex: uint = 0
     for l in splitLines(source):
-        lineNum += 1
+        lineIndex += 1
+        CurrentFilePosition.SetCurrentLine(uint(lineIndex))
+
         var line = l.strip()
         
         # Tokenize current line
-        var token: Token = Tokenize(line, lineNum)
+        var token: Token = Tokenize(line)
         
         # If EmptyToken, skip
         if token.tType == EmptyToken:
@@ -137,7 +140,7 @@ proc PreParse(bytecode: var Bytecode, source: string) =
         
         # If StringToken, skip
         if token.tType == StringToken:
-            bytecode.ParseString(token.addon, lineNum)
+            bytecode.ParseString(token.addon)
             continue
         
         # If InstructionToken, skip
@@ -148,17 +151,20 @@ proc PreParse(bytecode: var Bytecode, source: string) =
         # If LabelToken, register new label
         elif token.tType == LabelToken:
             if GetInstTypeByName(token.identifier) != INST_ERROR:
-                LogError("At Line " & $lineNum & ": " & token.identifier & " is an Instruction and can't be used as Label!")
+                LogError("\"$#\" is an Instruction and can't be used as Label name!" % (token.identifier), true)
                 quit(-1)
 
             const invalidLabelChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[]()_-"
             for c in token.identifier.toUpper:
                 if not (c in invalidLabelChars):
-                    LogError("At Line " & $lineNum & ": " & c & " can't be used in Label names!")
+                    if c == '\'':
+                        LogError("\"$#\" can't be used in Label names!" % ($c), true)
+                    else:
+                        LogError("'$#' can't be used in Label names!" % ($c), true)
                     quit(-1)
 
-            bytecode.RegisterLabel(token.identifier, bytecode.code.len, lineNum)
-            LogDebug("Registerd Label '" & token.identifier & "' with addr " & $bytecode.code.len)
+            bytecode.RegisterLabel(token.identifier, uint(bytecode.code.len))
+            LogDebug("Registerd Label \"$#\" with address $#" % @[token.identifier, $bytecode.code.len], true)
             continue
 
 proc Parse(bytecode: var Bytecode, source: string) =
@@ -166,13 +172,15 @@ proc Parse(bytecode: var Bytecode, source: string) =
     bytecode.code = @[]
 
     ## Iterate lines of the source code
-    var lineNum = 0
+    var lineIndex: uint = 0
     for l in splitLines(source):
-        lineNum += 1
+        lineIndex += 1
+        CurrentFilePosition.SetCurrentLine(lineIndex)
+
         var line = l.strip()
 
         # Tokenize line
-        var token: Token = Tokenize(line, lineNum)
+        var token: Token = Tokenize(line)
 
         # Get instructionType of token identifier
         var instType = GetInstTypeByName(token.identifier)
@@ -183,13 +191,13 @@ proc Parse(bytecode: var Bytecode, source: string) =
         
         # If StringToken, ParseString
         if token.tType == StringToken:
-            bytecode.ParseString(token.addon, lineNum)
+            bytecode.ParseString(token.addon)
             continue
 
         # If No Operand InstructionToken, add Instruction without operand
         elif token.tType == NoOperandInstructionToken:
             if not (instType in NoOperandInsts):
-                LogError("At Line " & $lineNum & ":" & "Instruction '" & token.identifier.toUpper() & "' takes an argument!")
+                LogError("\"$#\" takes an argument!" % (token.identifier.toUpper()), true)
                 quit(-1)
             bytecode.code.add(NewInst(instType, NewWord(0))) 
             continue
@@ -197,9 +205,9 @@ proc Parse(bytecode: var Bytecode, source: string) =
         # If InstructionToken, add Instruction with operand
         elif token.tType == InstructionToken:
             if (instType in NoOperandInsts): 
-                LogError("At Line " & $lineNum & ":" & "Instruction '" & token.identifier.toUpper() & "' takes no argument!")
+                LogError("\"$#\" takes no argument!" % (token.identifier.toUpper()), true)
                 quit(-1)
-            bytecode.code.add(NewInst(instType, parseWord(token.addon, bytecode.labels, lineNum)))
+            bytecode.code.add(NewInst(instType, parseWord(token.addon, bytecode.labels)))
             continue
 
         # If LabelToken, skip
@@ -209,8 +217,10 @@ proc Parse(bytecode: var Bytecode, source: string) =
 proc ParseSourceFile*(path: string): Bytecode =
     var fstrm = newFileStream(path, fmRead)
     if isNil(fstrm):
-        LogError("Could not open File Stream to file: '" & path & "'!")
+        LogError("Could not open File Stream to file: '$#'!" % (path))
         quit(-1)
+
+    CurrentFilePosition.SetCurrentFile(extractFilename(path))
 
     var source = fstrm.readAll()
 
