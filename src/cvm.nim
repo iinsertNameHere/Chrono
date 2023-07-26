@@ -3,6 +3,8 @@ import "runtime/Execution"
 from "asm/Bytecode" import LoadProgramFromFile
 import "utility/cvmArgParse"
 
+import os
+
 proc main() =
     # Parsing Args
     var args = InitArgs()
@@ -12,6 +14,9 @@ proc main() =
     var cvm = CreateCVM(LoadProgramFromFile(args.programFile))
 
     # Running CVM
-    cvm.Run()
+    if args.decompile:
+        cvm.Decompile(extractFilename(args.programFile.changeFileExt("decompiled.croasm")))
+    else:
+        cvm.Run()
 
 main()

@@ -6,16 +6,19 @@ import os
 type Args* = object
     ## Opject that holds all Arguments as Vars
     programFile*: string
+    decompile*: bool
 
 proc InitArgs*(): Args =
     ## Function that Initializes an Args instance
     result.programFile = ""
+    result.decompile = false
 
 proc help() =
     ## Function that print help list to console
     echo "Usage: " & extractFilename(getAppFilename()) & " file"
     echo "Options:"
-    echo "   ", "-h --help    >>   Show Help and exit"
+    echo "   ", "-h --help      >>   Show Help and exit"
+    echo "   ", "-d --decompile >>   Decompiles the program"
 
 proc ParseArgs*(args: var Args) =
     ## Function that Parses the commandline-args to an Args object
@@ -29,6 +32,8 @@ proc ParseArgs*(args: var Args) =
                     of "h", "help": # -h and --help
                         help()
                         quit(0)
+                    of "d", "decompile": # -d and --decompile
+                        args.decompile = true
                     else:
                         LogError("Unknown Option '" & parser.key & "'")
                         help()

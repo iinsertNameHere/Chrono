@@ -3,11 +3,13 @@ import "../asm/InstructionFunctions"
 import "../utility/Logger"
 import "../asm/Bytecode"
 
+import std/streams
+
 proc Run*(cvm: var CVM) =
     ## Function that executes the loaded .cro program
     var inst: Instruction
     while true:
-        if cvm.cursorIndex > uint(cvm.program.len):
+        if cvm.cursorIndex > uint(cvm.program.len - 1):
             LogError("Programm was not halted!")
             quit(-1)
 
@@ -85,10 +87,31 @@ proc Run*(cvm: var CVM) =
                 LogError("No Function for Instruction " & inst.InstName)
                 quit(-1)
 
-proc Print*(cvm: CVM) =
-    ## Function that print the Loaded .cro program
+proc hasDecimals(f: float): bool =
+    ## Checks if a float has decimal points
+    return (f - float(int(f)) != 0)
+
+proc Decompile*(cvm: CVM, path: string)=
+    ## Function that decompiles the Loaded .cro program
+
+    var fstrm = newFileStream(path, fmWrite)
+    if isNil(fstrm):
+        LogError("Could not open File Stream to file: '" & path & "'!")
+        quit(-1)
+
+    LogInfo("Decompiling Program...")
+
     for inst in cvm.program:
         if inst.instType in NoOperandInsts:
-            echo inst.InstName
+            fstrm.writeLine(inst.InstName)
         else:
-            echo inst.InstName & " " & $inst.operand.as_float
+            if inst.operand.fromStack:
+                fstrm.writeLine(inst.InstName & " $")
+            elif inst.operand.as_float.hasDecimals():
+                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_float & "f")
+            else:
+                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_numb & "i")
+
+    LogSuccess("Decompiled to '" & path & "'!")
+
+    fstrm.close()

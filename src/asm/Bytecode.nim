@@ -152,6 +152,8 @@ proc WriteToFile*(bytecode: Bytecode, path: string) =
     for inst in bytecode.code:
         fstrm.write(inst)
 
+    fstrm.close()
+
 proc LoadProgramFromFile*(path: string): Program =
     ## Loads a Program object from file
     ## Returns: Loaded Program
@@ -182,6 +184,8 @@ proc LoadProgramFromFile*(path: string): Program =
         discard fstrm.readData(inst.addr, sizeof(inst))
         # Adding Instruction to Programm
         result.add(inst)
+
+    fstrm.close()
 
 proc parseWord*(str: string, labels: seq[Label], lineNum: int): Word =
     ## Parses a Word value contained in `sts`
