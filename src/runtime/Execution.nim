@@ -110,7 +110,7 @@ proc Decompile*(cvm: CVM, path: string)=
             elif inst.operand.as_float.hasDecimals():
                 fstrm.writeLine(inst.InstName & " " & $inst.operand.as_float & "f")
             else:
-                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_numb & "i")
+                fstrm.writeLine(inst.InstName & " " & $inst.operand.as_int & "i")
 
     LogSuccess("Decompiled to '" & path & "'!")
 

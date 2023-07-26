@@ -3,51 +3,50 @@ import "../utility/Logger"
 
 type Word* = object
     ## Object that holds a value that can be casted to every DataType
-    as_numb*: int
+    as_int*: int
     as_float*: float
     as_bool*: bool
     as_char*: char
     fromStack*: bool
 
-
 proc NewWord*(value: int): Word =
     ## New Word from numb
-    result.as_numb = value
+    result.as_int = value
     result.as_float = float(value)
     result.as_bool = (if value > 0: true else: false)
     
-    if result.as_numb > 127:
+    if result.as_int > 127:
         result.as_char = char(127)
-    elif result.as_numb < 0:
+    elif result.as_int < 0:
         result.as_char = char(0)
     else:
-        result.as_char = char(result.as_numb)
+        result.as_char = char(result.as_int)
 
 proc NewWord*(value: float): Word =
     ## New Word from float
-    result.as_numb = int(value)
+    result.as_int = int(value)
     result.as_float = value
-    result.as_bool = (if result.as_numb > 0: true else: false)
+    result.as_bool = (if result.as_int > 0: true else: false)
 
-    if result.as_numb > 127:
+    if result.as_int > 127:
         result.as_char = char(127)
-    elif result.as_numb < 0:
+    elif result.as_int < 0:
         result.as_char = char(0)
     else:
-        result.as_char = char(result.as_numb)
+        result.as_char = char(result.as_int)
 
 proc NewWord*(value: bool): Word =
     ## New Word from bool
-    result.as_numb = int(value)
-    result.as_float = float(result.as_numb)
+    result.as_int = int(value)
+    result.as_float = float(result.as_int)
     result.as_bool = value
-    result.as_char = char(result.as_numb)
+    result.as_char = char(result.as_int)
 
 proc NewWord*(value: char): Word =
     ## New Word from char
-    result.as_numb = int(value)
-    result.as_float = float(result.as_numb)
-    result.as_bool = (if result.as_numb > 0: true else: false)
+    result.as_int = int(value)
+    result.as_float = float(result.as_int)
+    result.as_bool = (if result.as_int > 0: true else: false)
     result.as_char = value
 
 proc NewFromStackWord*(): Word =
