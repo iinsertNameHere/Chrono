@@ -26,7 +26,7 @@ fi
 # Building src
 
 echo "## Building Nemo ##"
-echo "Mode: Release"
+echo "Mode: Debug"
 echo ""
 
 function build {
@@ -38,7 +38,7 @@ function build {
 
     echo "[Build] Compiling $filename ..."
     # nim compile --outdir:$outdir -d:release $srcpath
-    nim compile --verbosity:0 --outdir:$outdir -d:release $srcpath
+    nim compile --verbosity:0 --outdir:$outdir $srcpath
 }
 
 build "$srcdir/nvm.nim"
