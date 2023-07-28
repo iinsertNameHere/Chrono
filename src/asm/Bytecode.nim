@@ -4,7 +4,7 @@ import "DataTypes"
 import "../utility/Logger"
 
 type InstructionType* = enum
-    ## All croasm instruction
+    ## All nemo instruction
     INST_NOP = 0,
 
     INST_PUSH,
@@ -53,7 +53,7 @@ type InstructionType* = enum
 const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT, INST_LEN]
 
 type Instruction* = object
-    ## Croasm Instruction
+    ## Nemo Instruction
     ## instType: Hold The type of the instruction (InstructionType)
     ## operand: Holds an "argument" of Type Word that can be interpreted as numb (int), float, bool, char and byte.
     instType*: InstructionType

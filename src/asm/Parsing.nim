@@ -7,7 +7,7 @@ import std/streams
 import os
 
 type TokenType = enum
-    ## All Token Types suported by croasm
+    ## All Token Types suported by Nemo
     NoOperandInstructionToken
     InstructionToken
     CommentToken

@@ -7,7 +7,7 @@ import std/streams
 import strutils
 
 proc Run*(cvm: var CVM) =
-    ## Function that executes the loaded .cro program
+    ## Function that executes the loaded .nemo program
     var inst: Instruction
     while true:
         if cvm.cursorIndex > uint(cvm.program.len - 1):
@@ -93,7 +93,7 @@ proc hasDecimals(f: float): bool =
     return (f - float(int(f)) != 0)
 
 proc Decompile*(cvm: CVM, path: string)=
-    ## Function that decompiles the Loaded .cro program
+    ## Function that decompiles the Loaded .nemo program
 
     var fstrm = newFileStream(path, fmWrite)
     if isNil(fstrm):

@@ -66,7 +66,7 @@ proc PushBack*(s: var seq, value: auto) =
 type Memory* = seq[byte]
 
 type DataType* = enum
-    ## All croasm datatypes
+    ## All nemo datatypes
     NullType,
     Numb,
     Float,

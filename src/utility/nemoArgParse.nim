@@ -56,8 +56,8 @@ proc ParseArgs*(args: var Args) =
                         help()
                         quit(-1)
 
-                    if splitFile(parser.key).ext != ".croasm":
-                        LogError("Source File is not a Chrono-Assembly (.croasm) file!")
+                    if splitFile(parser.key).ext != ".nemo":
+                        LogError("Source File is not a .nemo file!")
                         quit(-1)
 
                     args.sourceFile = parser.key
@@ -68,4 +68,4 @@ proc ParseArgs*(args: var Args) =
         quit(-1)
 
     if args.outputFile.strip() == "":
-        args.outputFile = extractFilename(args.sourceFile.changeFileExt("cro"))
+        args.outputFile = extractFilename(args.sourceFile.changeFileExt("nce"))

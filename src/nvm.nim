@@ -1,7 +1,7 @@
 import "runtime/VM"
 import "runtime/Execution"
 from "asm/Bytecode" import LoadProgramFromFile
-import "utility/cvmArgParse"
+import "utility/nvmArgParse"
 
 import os
 
@@ -15,7 +15,7 @@ proc main() =
 
     # Running CVM
     if args.decompile:
-        cvm.Decompile(extractFilename(args.programFile.changeFileExt("decompiled.croasm")))
+        cvm.Decompile(extractFilename(args.programFile.changeFileExt("decompiled.nemo")))
     else:
         cvm.Run()
 

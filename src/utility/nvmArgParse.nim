@@ -46,8 +46,8 @@ proc ParseArgs*(args: var Args) =
                         help()
                         quit(-1)
 
-                    if splitFile(parser.key).ext != ".cro":
-                        LogError("Program File is not a Chrono-Binary (.cro) file!")
+                    if splitFile(parser.key).ext != ".nce":
+                        LogError("Program File is not a Chrono-Binary (.nce) file!")
                         quit(-1)
 
                     args.programFile = parser.key

@@ -3,5 +3,5 @@ nimblecache/
 htmldocs/
 dist/
 *.nce
-*.nmo
-!examples/*.nmo
+*.nemo
+!examples/*.nemo
