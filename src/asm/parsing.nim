@@ -571,7 +571,7 @@ proc CompileSourceFile*(path: string): Bytecode =
     LogDebug("Parsing Includes...")
     var tokens = HandleIncludes(result.includes)
 
-    tokens.AddFile(path, mainTokens)
+    tokens.AddFile(extractFilename(path), mainTokens)
 
     LogDebug("Parsing Labels...")
     result.ParseLabels(tokens)
