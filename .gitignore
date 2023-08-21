@@ -1,7 +1,7 @@
 nimcache/
 nimblecache/
 htmldocs/
-dist/
+dist/bin/
 *.nce
 *.nemo
 !examples/*.nemo

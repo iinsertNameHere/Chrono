@@ -1,6 +1,9 @@
 import strutils
-import "../utility/Logger"
+import "../utility/logger"
 
+#########################################################################
+## Words
+#########################################################################
 type Word* = object
     ## Object that holds a value that can be casted to every DataType
     as_int*: int
@@ -53,6 +56,10 @@ proc NewFromStackWord*(): Word =
     # New Word from stack
     result.fromStack = true
 
+#########################################################################
+## Stack
+#########################################################################
+
 # Type that holds an array of Words
 type Stack* = seq[Word]
 
@@ -62,9 +69,9 @@ proc PushBack*(s: var seq, value: auto) =
     ## all other values 
     s = @[value] & s
 
-# Type that holds an array of bytes
-type Memory* = seq[byte]
-
+#########################################################################
+## Datatypes
+#########################################################################
 type DataType* = enum
     ## All nemo datatypes
     NullType,

@@ -5,23 +5,7 @@ full_path="$0"
 directory=$(dirname "$full_path")
 
 srcdir="$directory/src"
-outdir="$directory/dist"
-
-arg1="$1"
-
-# Handling Help option
-function printHelp {
-    echo "Help"
-    exit
-}
-
-if [ arg1 = "-h" ]; then
-    printHelp
-elif [ arg1 = "--help" ]; then
-    printHelp
-elif [ arg1 = "help" ]; then
-    printHelp
-fi
+outdir="$directory/dist/bin"
 
 # Building src
 
@@ -37,7 +21,6 @@ function build {
     local name="${parts[0]}"
 
     echo "[Build] Compiling $filename ..."
-    # nim compile --outdir:$outdir -d:release $srcpath
     nim compile --verbosity:0 --outdir:$outdir $srcpath
 }
 

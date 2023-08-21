@@ -1,7 +1,8 @@
-import "asm/Parsing"
-import "asm/Bytecode"
-import "utility/Logger"
+import "asm/parsing"
+import "asm/bytecode"
+import "utility/logger"
 import "utility/nemoArgParse"
+import "utility/globals.nim"
 
 proc main() =
     # Parsing Args
@@ -9,10 +10,22 @@ proc main() =
     args.ParseArgs()
 
     # Setting options
-    Logger.debug = args.debug
+    logger.debug = args.debug
+    globals.VerboseOutput = args.verbose
 
     # Parsing Source File to Bytecode
-    var bytecode = ParseSourceFile(args.sourceFile)
+    var bytecode = CompileSourceFile(args.sourceFile)
+
+    # if bytecode.labels.len != 0:
+    #     echo "\nLABELS:"
+    #     for label in bytecode.labels:
+    #         echo label
+
+    # echo "\nCODE:"
+    # for inst in bytecode.code:
+    #     echo inst
+
+
     
     # Writing bytecode to file
     LogInfo("Writing compiled Bytecode to file...")

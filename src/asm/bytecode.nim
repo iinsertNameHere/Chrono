@@ -1,76 +1,92 @@
+import "../utility/logger"
+import "datatypes"
+
 import std/streams
 import strutils
-import "DataTypes"
-import "../utility/Logger"
 
+#########################################################################
+## Instructions
+#########################################################################
 type InstructionType* = enum
     ## All nemo instruction
     INST_NOP = 0,
 
+    # Stack Operations
     INST_PUSH,
     INST_DUP,
     INST_SWAP,
     INST_DEL,
 
+    # Math Operations
     INST_ADD,
     INST_SUB,
     INST_MUL,
     INST_DIV,
     INST_MOD,
+
+    # String Operations
     INST_STR,
 
+    # Bit Operations
     INST_BAND,
     INST_BOR,
     INST_XOR,
     INST_SHL,
     INST_SHR,
 
+    # Positional Operations
     INST_JUMP,
-    INST_AND,
-    INST_OR,
     INST_JUMPC,
     INST_CALL,
     INST_CALLC,
-    INST_OUTPUT,
-    INST_DUMP,
     INST_RETURN,
-    INST_LEN,
-    
+    INST_HALT,
 
-    INST_EQUAL,
+    # Logical Operations
+    INST_AND,
+    INST_OR,
     INST_NOT,
+    INST_EQUAL,
     INST_GREATER,
     INST_LESS,
 
-    INST_READ,
-    INST_WRITE,
+    # Output Operations
+    INST_OUTPUT,
+    INST_DUMP,
 
-    INST_HALT,
-
+    # Error Operation
     INST_ERROR
 
 # Constant that holds all Instructions that take no operand
-const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT, INST_LEN]
+const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT]
 
 type Instruction* = object
     ## Nemo Instruction
-    ## instType: Hold The type of the instruction (InstructionType)
+    ## typ: Hold The type of the instruction (InstructionType)
     ## operand: Holds an "argument" of Type Word that can be interpreted as numb (int), float, bool, char and byte.
-    instType*: InstructionType
+    typ*: InstructionType
     operand*: Word
-
-proc InstName*(inst: Instruction): string =
-    ## Gets the name of an instruction.
-    result = $repr(inst.instType).split('_')[1]
-
-proc InstNameFromType*(instType: InstructionType): string =
-    ## Gets the name of an instruction based on an InstructionType.
-    result = $repr(instType).split('_')[1]
 
 proc NewInst*(instType: InstructionType, operand: Word): Instruction =
     ## Inits a new Instruction
-    result.instType = instType
+    result.typ = instType
     result.operand = operand
+
+proc takesOperand*(inst: Instruction): bool =
+    ## Returns True if the Inst takes an operand
+    result = if inst.typ in NoOperandInsts: false else: true
+
+proc takesOperand*(instType: InstructionType): bool =
+    ## Returns True if the Inst takes an operand
+    result = if instType in NoOperandInsts: false else: true
+
+proc InstName*(inst: Instruction): string =
+    ## Gets the name of an instruction.
+    result = $repr(inst.typ).split('_')[1]
+
+proc InstName*(instType: InstructionType): string =
+    ## Gets the name of an instruction based on an InstructionType.
+    result = $repr(instType).split('_')[1]
 
 proc GetInstTypeByName*(name: string): InstructionType =
     ## Check if name is a valid instruction
@@ -89,19 +105,35 @@ proc GetInstTypeByName*(name: string): InstructionType =
     # Return INST_ERROR if name not in InstTypes
     return INST_ERROR
 
+#########################################################################
+## Labels
+#########################################################################
 type Label* = object
     ## Label object that hold the name and location of the label in the program (used in execution)
-    name: string
-    address: uint
-    line: uint
+    name*: string
+    address*: uint
+    line*: uint
 
+proc NewLabel*(name: string, address: uint, line: uint): Label =
+    result.name = name
+    result.address = address
+    result.line = line
+
+#########################################################################
+## Bytecode
+#########################################################################
 type Program* = seq[Instruction]
-## A list of Instructions
 
 type Bytecode* = object
     ## Object that holds a Program and all Registerd labeld (not used in execution)
     code*: Program
     labels*: seq[Label]
+    includes*: seq[string]
+
+proc add*(bc1: var Bytecode, bc2: Bytecode) =
+    bc1.code &= bc2.code
+    bc1.labels &= bc2.labels
+    bc1.includes &= bc2.includes
 
 proc RegisterLabel*(bytecode: var Bytecode, name: string, address: uint) =
     ## Registers a new label in the Bytecode
@@ -121,14 +153,20 @@ proc RegisterLabel*(bytecode: var Bytecode, name: string, address: uint) =
     # Adding label
     bytecode.labels.add(newLabel)
 
+proc hasLabel*(bytecode: var Bytecode, labelName: string): int =
+    result = -1
+    for label in bytecode.labels:
+        if label.name == labelName:
+            result = int(label.address)
+            break
+
 type MetaData = object
     ## Object to store file metatada like version, magic and programLength
     version: uint16
     magic: uint32
     programLength: uint64
 
-# Constants that hold the programs current
-# File Version and Magic Number
+# Constants that hold the programs current File Version and Magic Number
 const version: uint16 = 1
 const magic: uint32 = 0xEDF5877
 
@@ -188,9 +226,9 @@ proc LoadProgramFromFile*(path: string): Program =
         result.add(inst)
 
     fstrm.close()
-
+    
 proc parseWord*(str: string, labels: seq[Label]): Word =
-    ## Parses a Word value contained in `sts`
+    ## Parses a Word value contained in `str`
 
     # Getting DataType
     var dtype: DataType = DetectDataType(str)

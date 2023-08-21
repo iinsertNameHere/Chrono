@@ -1,4 +1,4 @@
-import "Logger"
+import "logger"
 
 import os
 import strutils
@@ -7,12 +7,14 @@ import std/parseopt
 type Args* = object
     ## Opject that holds all Arguments as Vars
     debug*: bool
+    verbose*: bool
     sourceFile*: string
     outputFile*: string
 
 proc InitArgs*(): Args =
     ## Function that Initializes an Args instance
     result.debug = false
+    result.verbose = false
     result.sourceFile = ""
     result.outputFile = ""
 
@@ -22,6 +24,7 @@ proc help() =
     echo "Options:"
     echo "   ", "-h --help    >>   Show Help and exit"
     echo "   ", "-d --debug   >>   Enabled Debug output"
+    echo "   ", "-v --verbose >>   Prints more detailed Debug info"
     echo "   ", "-o --output  >>   Define Output File"
     echo ""
 
@@ -39,6 +42,8 @@ proc ParseArgs*(args: var Args) =
                         quit(0)
                     of "d", "debug": # -d and --debug
                         args.debug = true
+                    of "v", "verbose": # -d and --debug
+                        args.verbose = true
                     of "o", "output": # -o and --output
                         if parser.val.strip() == "":
                             LogError("Missing Output File!")

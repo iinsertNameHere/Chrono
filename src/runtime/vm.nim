@@ -1,5 +1,5 @@
-import "../asm/DataTypes"
-import "../asm/Bytecode"
+import "../asm/datatypes"
+import "../asm/bytecode"
 
 type CVM* = object
     ## Virtual Machine that holds a Stack, a program, a programSize and a memory 
@@ -10,8 +10,6 @@ type CVM* = object
     program*: Program
     programSize: uint
     cursorIndex*: uint64
-
-    memory*: Memory
 
 proc CreateCVM*(program: Program): CVM =
     ## Function that Creates a new CVM instance

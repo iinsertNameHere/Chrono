@@ -1,7 +1,7 @@
-import "VM"
-import "../asm/InstructionFunctions"
-import "../utility/Logger"
-import "../asm/Bytecode"
+import "vm"
+import "../asm/instructionFunctions"
+import "../utility/logger"
+import "../asm/bytecode"
 
 import std/streams
 import strutils
@@ -19,7 +19,7 @@ proc Run*(cvm: var CVM) =
         # echo inst.InstName
         # discard readLine(stdin)
 
-        case inst.instType:
+        case inst.typ:
             of INST_NOP:
                 cvm.cursorIndex += 1
             of INST_PUSH:
@@ -68,8 +68,6 @@ proc Run*(cvm: var CVM) =
                 cvm.INSTFN_DUMP(inst)
             of INST_RETURN:
                 cvm.INSTFN_RETURN(inst)
-            of INST_LEN:
-                cvm.INSTFN_LEN(inst)
             of INST_EQUAL:
                 cvm.INSTFN_EQUAL(inst)
             of INST_NOT:
@@ -78,10 +76,6 @@ proc Run*(cvm: var CVM) =
                 cvm.INSTFN_GREATER(inst)
             of INST_LESS:
                 cvm.INSTFN_LESS(inst)
-            of INST_READ:
-                cvm.INSTFN_READ(inst)
-            of INST_WRITE:
-                cvm.INSTFN_WRITE(inst)
             of INST_HALT:
                 break
             else:
@@ -92,7 +86,7 @@ proc hasDecimals(f: float): bool =
     ## Checks if a float has decimal points
     return (f - float(int(f)) != 0)
 
-proc Decompile*(cvm: CVM, path: string)=
+proc Decompile*(cvm: CVM, path: string, print: bool = false)=
     ## Function that decompiles the Loaded .nemo program
 
     var fstrm = newFileStream(path, fmWrite)
@@ -103,16 +97,26 @@ proc Decompile*(cvm: CVM, path: string)=
     LogInfo("Decompiling Program...")
 
     for inst in cvm.program:
-        if inst.instType in NoOperandInsts:
+        if inst.typ in NoOperandInsts:
             fstrm.writeLine(inst.InstName)
         else:
-            if inst.operand.fromStack:
-                fstrm.writeLine("$# $" % (inst.InstName))
-            elif inst.operand.as_float.hasDecimals():
-                fstrm.writeLine("$# $#f" % @[inst.InstName, $inst.operand.as_float])
+            if not print:
+                if inst.operand.fromStack:
+                    fstrm.writeLine("$# $" % (inst.InstName))
+                elif inst.operand.as_float.hasDecimals():
+                    fstrm.writeLine("$# $#" % @[inst.InstName, $inst.operand.as_float])
+                else:
+                    fstrm.writeLine("$# $#" % @[inst.InstName, $inst.operand.as_int])
             else:
-                fstrm.writeLine("$# $#i" % @[inst.InstName, $inst.operand.as_int])
-
-    LogSuccess("Decompiled to '" & path & "'!")
+                if inst.operand.fromStack:
+                    echo("$# $" % (inst.InstName))
+                elif inst.operand.as_float.hasDecimals():
+                    echo("$# $#" % @[inst.InstName, $inst.operand.as_float])
+                else:
+                    echo("$# $#" % @[inst.InstName, $inst.operand.as_int])
+    if not print:
+        LogSuccess("Decompiled to '" & path & "'!")
+    else:
+        LogSuccess("Decompilation finished!")
 
     fstrm.close()
