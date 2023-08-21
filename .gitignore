@@ -5,3 +5,4 @@ dist/bin/
 *.nce
 *.nemo
 !examples/*.nemo
+!dist/lib/*.nemo

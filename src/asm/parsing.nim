@@ -391,6 +391,8 @@ proc ParseLabels(bytecode: var Bytecode, tokens: var seq[Token]) =
 
                         if nextToken.typ == tkString:
                             bytecode.ParseString(nextToken.value)
+                        else:
+                            bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
                     else:
                         bytecode.code.add(NewInst(INST_NOP, NewWord(0)))
             
