@@ -98,7 +98,10 @@ proc Decompile*(cvm: CVM, path: string, print: bool = false)=
 
     for inst in cvm.program:
         if inst.typ in NoOperandInsts:
-            fstrm.writeLine(inst.InstName)
+            if not print:
+                fstrm.writeLine(inst.InstName)
+            else:
+                echo inst.InstName
         else:
             if not print:
                 if inst.operand.fromStack:
