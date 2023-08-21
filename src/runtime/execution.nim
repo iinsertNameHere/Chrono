@@ -125,4 +125,5 @@ proc Decompile*(cvm: CVM, path: string, print: bool = false)=
     else:
         LogSuccess("Decompilation finished!")
 
-    fstrm.close()
+    if not print:
+        fstrm.close()
