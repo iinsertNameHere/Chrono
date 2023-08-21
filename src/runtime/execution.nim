@@ -88,11 +88,14 @@ proc hasDecimals(f: float): bool =
 
 proc Decompile*(cvm: CVM, path: string, print: bool = false)=
     ## Function that decompiles the Loaded .nemo program
+    
+    var fstrm: FileStream
 
-    var fstrm = newFileStream(path, fmWrite)
-    if isNil(fstrm):
-        LogError("Could not open File Stream to file: '$#'!" % (path))
-        quit(-1)
+    if not print:
+        fstrm = newFileStream(path, fmWrite)
+        if isNil(fstrm):
+            LogError("Could not open File Stream to file: '$#'!" % (path))
+            quit(-1)
 
     LogInfo("Decompiling Program...")
 
