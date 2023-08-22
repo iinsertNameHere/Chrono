@@ -12,7 +12,7 @@ push 0
 push "Hello World!"##
 
 # Call the printString function from the printutils lib
-call printString
+call PrintString
 
 # Halt the program
 halt

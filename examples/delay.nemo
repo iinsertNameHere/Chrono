@@ -4,20 +4,27 @@
 
 # Include the time lib and the stdout lib 
 # in order to print to the console and delay the program
-@include <time>
-@include <stdout>
+
+# NOTE: We are using the macro version of the libs in order
+#       to make the output file less bloated with unused labels.
+
+# NOTE: If you have to use a lot of diferent procs from a lib, it is better
+#       to use the normal version to decrease the program file size.the lib procs more ofte
+
+@include <time.m>
+@include <stdout.m>
 
 # Push the amount to delay (1000 ms)
 # and call the delay proc
 push 1000
-call delay
+DelayM
 
 # Push 0 befor pushing the string to null terminate it
 push 0
 push "Waited for 1 sec!"
 
-# Call printString to print the string to stdout
-call printString
+# Use the PrintString Macro
+PrintStringM
 
 # Halt the program
 halt

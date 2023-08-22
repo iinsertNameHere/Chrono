@@ -7,7 +7,7 @@ PrintString:
 
     # Print the first item on stack
     OUTPUT 0
-
+    
     # Check if the next item is 0
     DUP 0
     PUSH 0
@@ -17,6 +17,7 @@ PrintString:
     # If not 0 repeat
     JUMPC PrintString
 
+    # Print New Line
     PUSH '\n'
     OUTPUT 0
 
@@ -24,6 +25,9 @@ PrintString:
     DEL 0
     RETURN
 
+####################################################
+## Prints a null terminated string without newline
+####################################################
 WriteString:
 
     # Print the first item on stack

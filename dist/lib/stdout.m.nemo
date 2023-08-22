@@ -1,0 +1,47 @@
+############################################
+## Prints a null terminated string
+############################################
+@macro PrintStringM {
+    ## Loop Start ##
+        # Print the first item on stack
+        OUTPUT 0
+
+        # Check if the next item is 0
+        DUP 0
+        PUSH 0
+        EQUAL 1
+        NOT 0
+
+        # If not 0 repeat
+        JUMPC 0
+    ## Loop End ##
+
+    # Print New Line
+    PUSH '\n'
+    OUTPUT 0
+
+    # Clean up stack
+    DEL 0
+}
+
+####################################################
+## Prints a null terminated string without newline
+####################################################
+@macro WriteStringM {
+    ## Loop Start ##
+        # Print the first item on stack
+        OUTPUT 0
+
+        # Check if the next item is 0
+        DUP 0
+        PUSH 0
+        EQUAL 1
+        NOT 0
+
+        # If not 0 repeat
+        JUMPC 0
+    ## Loop End ##
+
+    # Clean up stack
+    DEL 0
+}

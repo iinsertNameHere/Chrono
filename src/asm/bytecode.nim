@@ -114,11 +114,28 @@ type Label* = object
     name*: string
     address*: uint
     line*: uint
+    file*: string
 
-proc NewLabel*(name: string, address: uint, line: uint): Label =
+proc NewLabel*(name: string, address: uint, line: uint, file: string): Label =
     result.name = name
     result.address = address
     result.line = line
+    result.file = file
+
+#########################################################################
+## Macros
+#########################################################################
+type Macro* = object
+    name*: string
+    body*: seq[Instruction]
+    line*: uint
+    file*: string
+
+proc NewMacro*(name: string, body: seq[Instruction], line: uint, file: string): Macro =
+    result.name = name
+    result.body = body
+    result.line = line
+    result.file = file
 
 #########################################################################
 ## Bytecode
@@ -129,6 +146,7 @@ type Bytecode* = object
     ## Object that holds a Program and all Registerd labeld (not used in execution)
     code*: Program
     labels*: seq[Label]
+    macros*: seq[Macro]
     includes*: seq[string]
 
 proc add*(bc1: var Bytecode, bc2: Bytecode) =
@@ -144,11 +162,17 @@ proc RegisterLabel*(bytecode: var Bytecode, name: string, address: uint) =
     newLabel.name = name
     newLabel.address = address
     newLabel.line = CurrentFilePosition.currentLine
+    newLabel.file = CurrentFilePosition.currentFile
 
     # Checking that label dose not already exists
     for l in bytecode.labels:
         if l.name == newLabel.name:
-            LogError(" Label \"$#\" is already registerd at line $#!" % @[l.name, $l.line], true)
+            LogError(" Label \"$#\" is already registerd at line $# in file \"$#\"!" % [l.name, $l.line, l.file], true)
+            quit(-1)
+    
+    for m in bytecode.macros:
+        if m.name == newLabel.name:
+            LogError("\"$#\" is already used as a Macro name at line $# in file \"$#\"" % [m.name, $m.line, m.file], true)
             quit(-1)
 
     # Adding label
@@ -160,6 +184,30 @@ proc hasLabel*(bytecode: var Bytecode, labelName: string): int =
         if label.name == labelName:
             result = int(label.address)
             break
+
+proc RegisterMacro*(bytecode: var Bytecode, name: string, body: seq[Instruction]) =
+    ## Registers a new Macro
+
+    # Creating a new Macro and setting name and address
+    var newMacro: Macro
+    newMacro.name = name
+    newMacro.body = body
+    newMacro.line = CurrentFilePosition.currentLine
+    newMacro.file = CurrentFilePosition.currentFile
+
+    # Checking that label dose not already exists
+    for l in bytecode.labels:
+        if l.name == newMacro.name:
+            LogError(" Label \"$#\" is already registerd at line $# in file \"$#\"!" % [l.name, $l.line, l.file], true)
+            quit(-1)
+    
+    for m in bytecode.macros:
+        if m.name == newMacro.name:
+            LogError("\"$#\" is already used as a Macro name at line $# in file \"$#\"" % [m.name, $m.line, m.file], true)
+            quit(-1)
+
+    # Adding label
+    bytecode.macros.add(newMacro)
 
 type MetaData = object
     ## Object to store file metatada like version, magic and programLength

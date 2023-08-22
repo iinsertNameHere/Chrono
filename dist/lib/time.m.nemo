@@ -1,9 +1,7 @@
-JUMP __TIMEUTILS_END__
-
 ############################################
 ## Waits for the given amount of millis
 ############################################
-Delay:
+@macro DelayM {
     # Convert nanos to millis
     PUSH 1003000
     SWAP 1
@@ -12,8 +10,7 @@ Delay:
     # Store the current monotiks
     CLOCK
 
-    # Delay Loop
-    Delay[loop]:
+    ## Loop Start ##
         # Get monoticks
         CLOCK
 
@@ -26,12 +23,10 @@ Delay:
         LESS 1
 
         # Repeat loop if the required ammount is not reached
-        JUMPC Delay[loop]
+        JUMPC 4
+    ## Loop End ##
         
-    # Return to call point
+    # Clean up Stack
     DEL 0
     DEL 0
-    RETURN
-
-############################################
-__TIMEUTILS_END__:
+}

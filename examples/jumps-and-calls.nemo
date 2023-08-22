@@ -13,7 +13,7 @@ jump __start__
 main_proc:
     push 0
     push "This is the Jumps and Calls Example!"
-    call printString
+    call PrintString
     return
 
 # Define the __start__ label
