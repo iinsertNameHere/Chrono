@@ -2,16 +2,16 @@
 ## A Simple Hello World Example
 ############################################
 
-# Include the Standard INPUT/OUTPUT Lib called stdio
-@include <printutils.nemo>
+# Include printutils lib in order to print to the console
+@include <printutils>
 
 # Push 0 to null terminate the string
 push 0
 
 # Push the string
-push "Hello World!\n"##
+push "Hello World!"##
 
-# Call the printString function from the stdio lib
+# Call the printString function from the printutils lib
 call printString
 
 # Halt the program

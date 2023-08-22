@@ -40,6 +40,7 @@ type InstructionType* = enum
     INST_CALL,
     INST_CALLC,
     INST_RETURN,
+    INST_CLOCK,
     INST_HALT,
 
     # Logical Operations
@@ -58,7 +59,7 @@ type InstructionType* = enum
     INST_ERROR
 
 # Constant that holds all Instructions that take no operand
-const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT]
+const NoOperandInsts* = @[INST_NOP, INST_RETURN, INST_HALT, INST_CLOCK]
 
 type Instruction* = object
     ## Nemo Instruction

@@ -1,0 +1,23 @@
+############################################
+## A Simple Delay Example
+############################################
+
+# Include the timeutils lib  and the printutils lib 
+# in order to print to the console and delay the program
+@include <timeutils>
+@include <printutils>
+
+# Push the amount to delay (1000 ms)
+# and call the delay proc
+push 1000
+call delay
+
+# Push 0 befor pushing the string to null terminate it
+push 0
+push "Waited for 1 sec!"
+
+# Call printString to print the string to stdout
+call printString
+
+# Halt the program
+halt

@@ -43,7 +43,7 @@ proc NewToken(typ: TokenType, value: string): Token =
 proc isLetter(c: char): bool =
     ## Returns true if c is a valid Identifier letter 
     case c:
-        of 'a'..'z', 'A'..'Z', '0'..'9', '_', '-', '[', ']':
+        of 'a'..'z', 'A'..'Z', '0'..'9', '_', '[', ']':
             return true
         else:
             return false
@@ -82,7 +82,7 @@ proc Tokenize(source: string): seq[Token] =
             case line[index]:
 
                 # Handle Identifiers
-                of '_', '-', '[', ']', 'a'..'z', 'A'..'Z':
+                of '_', '[', ']', 'a'..'z', 'A'..'Z':
                     var identifier = ""
                     while index < line.len and line[index].isLetter:
                         identifier.add(line[index])
@@ -285,7 +285,7 @@ proc PreProcess(bytecode: var Bytecode, tokens: var seq[Token]) =
                 if nextToken.typ == tkString:
                     includePath = nextToken.value
                 elif nextToken.typ == tkLibString:
-                    includePath = joinPath(globals.LibDirectory, nextToken.value)
+                    includePath = joinPath(globals.LibDirectory, nextToken.value & ".nemo")
                 else:
                     LogError("Expected Lib Path after include", true)
                     quit(1)

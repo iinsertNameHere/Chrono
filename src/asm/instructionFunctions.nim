@@ -3,6 +3,8 @@ import "datatypes"
 import "../runtime/vm"
 import "../utility/logger"
 
+import std/monotimes
+
 ######################################################################################################
 # Stack Operations
 ######################################################################################################
@@ -547,6 +549,14 @@ proc INSTFN_RETURN*(cvm: var CVM, inst: Instruction) =
 
     cvm.cursorIndex = cvm.returnAddressStack[0]
     cvm.returnAddressStack.delete(0)
+
+proc INSTFN_CLOCK*(cvm: var CVM, inst: Instruction) =
+    ## Pushes the number of monoclock ticks elapsed since the program was launched
+
+    var elapsedTicks = getMonoTime().ticks - cvm.monotime.ticks
+
+    cvm.stack.PushBack(NewWord(int(elapsedTicks)))
+    cvm.cursorIndex += 1
 
 ######################################################################################################
 # Logical Operations

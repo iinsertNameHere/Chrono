@@ -1,0 +1,26 @@
+############################################
+## A Simple Jumps and Calls Example
+############################################
+
+# Include printutils lib in order to print to the console
+@include <printutils>
+
+# Jump to the __start__ label to skip the procedure
+# definition and not execute it by accident
+jump __start__
+
+# Define the main procedure
+main_proc:
+    push 0
+    push "This is the Jumps and Calls Example!"
+    call printString
+    return
+
+# Define the __start__ label
+__start__:
+
+# Call our main procedure
+call main_proc
+
+# Halt the program
+halt

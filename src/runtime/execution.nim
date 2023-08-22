@@ -5,10 +5,17 @@ import "../asm/bytecode"
 
 import std/streams
 import strutils
+from std/monotimes import getMonoTime
 
 proc Run*(cvm: var CVM) =
     ## Function that executes the loaded .nemo program
+
     var inst: Instruction
+
+    # Update VM Starting Point 
+    cvm.monotime = getMonoTime()
+
+    # Loop the Program
     while true:
         if cvm.cursorIndex > uint(cvm.program.len - 1):
             LogError("Programm was not halted!")
@@ -78,6 +85,8 @@ proc Run*(cvm: var CVM) =
                 cvm.INSTFN_LESS(inst)
             of INST_HALT:
                 break
+            of INST_CLOCK:
+                cvm.INSTFN_CLOCK(inst)
             else:
                 LogError("No Function defined for Instruction \"$#\"" % (inst.InstName))
                 quit(-1)
