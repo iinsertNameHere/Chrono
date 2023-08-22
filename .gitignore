@@ -4,5 +4,7 @@ htmldocs/
 dist/bin/
 *.nce
 *.nemo
+test.nemo
+test.nce
 !examples/*.nemo
 !dist/lib/*.nemo

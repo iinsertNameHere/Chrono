@@ -2,10 +2,10 @@
 ## A Simple Delay Example
 ############################################
 
-# Include the timeutils lib  and the printutils lib 
+# Include the time lib and the stdout lib 
 # in order to print to the console and delay the program
-@include <timeutils>
-@include <printutils>
+@include <time>
+@include <stdout>
 
 # Push the amount to delay (1000 ms)
 # and call the delay proc

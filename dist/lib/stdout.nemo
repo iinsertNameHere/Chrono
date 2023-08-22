@@ -1,46 +1,46 @@
-jump __printutils_end__
+JUMP __PRINTUTILS_END__
 
 ############################################
 ## Prints a null terminated string
 ############################################
-printString:
+PrintString:
 
     # Print the first item on stack
-    output 0
+    OUTPUT 0
 
     # Check if the next item is 0
-    dup 0
-    push 0
-    equal 1
-    not 0
+    DUP 0
+    PUSH 0
+    EQUAL 1
+    NOT 0
 
     # If not 0 repeat
-    jumpc printString
+    JUMPC PrintString
 
-    push '\n'
-    output 0
+    PUSH '\n'
+    OUTPUT 0
 
     # Else return
-    del 0
-    return
+    DEL 0
+    RETURN
 
-writeString:
+WriteString:
 
     # Print the first item on stack
-    output 0
+    OUTPUT 0
 
     # Check if the next item is 0
-    dup 0
-    push 0
-    equal 1
-    not 0
+    DUP 0
+    PUSH 0
+    EQUAL 1
+    NOT 0
 
     # If not 0 repeat
-    jumpc printString
+    JUMPC WriteString
 
     # Else return
-    del 0
-    return
+    DEL 0
+    RETURN
 
 ############################################
-__printutils_end__:
+__PRINTUTILS_END__:

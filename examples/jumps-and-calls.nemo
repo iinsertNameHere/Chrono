@@ -3,7 +3,7 @@
 ############################################
 
 # Include printutils lib in order to print to the console
-@include <printutils>
+@include <stdout>
 
 # Jump to the __start__ label to skip the procedure
 # definition and not execute it by accident

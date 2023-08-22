@@ -1,37 +1,37 @@
-jump __timeutils_end__
+JUMP __TIMEUTILS_END__
 
 ############################################
 ## Prints a null terminated string
 ############################################
-delay:
+Delay:
     # Convert nanos to millis
-    push 1003000
-    swap 1
-    mul 1
+    PUSH 1003000
+    SWAP 1
+    MUL 1
 
     # Store the current monotiks
-    clock
+    CLOCK
 
     # Delay Loop
-    delay[loop]:
+    Delay[loop]:
         # Get monoticks
-        clock
+        CLOCK
 
         # Check if the required ammount of monoticks are elapsed
-        dup 1
-        swap 1
-        sub 1
-        dup 2
-        swap 1
-        less 1
+        DUP 1
+        SWAP 1
+        SUB 1
+        DUP 2
+        SWAP 1
+        LESS 1
 
         # Repeat loop if the required ammount is not reached
-        jumpc delay[loop]
+        JUMPC Delay[loop]
         
     # Return to call point
-    del 0
-    del 0
-    return
+    DEL 0
+    DEL 0
+    RETURN
 
 ############################################
-__timeutils_end__:
+__TIMEUTILS_END__:

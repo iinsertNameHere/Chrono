@@ -3,7 +3,7 @@
 ############################################
 
 # Include printutils lib in order to print to the console
-@include <printutils>
+@include <stdout>
 
 # Push 0 to null terminate the string
 push 0

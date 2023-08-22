@@ -16,6 +16,7 @@ type TokenType = enum
     tkFloat,
     tkString,
     tkChar,
+    tkFSOperator,
 
     # Preprocessor Tokens
     tkPreprocessorAnutation,
@@ -184,6 +185,11 @@ proc Tokenize(source: string): seq[Token] =
                     index.inc()
                     lineTokens.add(NewToken(tkPreprocessorAnutation, "@"))
                 
+                # Handle From Stack Operator
+                of '$':
+                    index.inc()
+                    lineTokens.add(NewToken(tkFSOperator, "$"))
+                
                 # Handle Numbers
                 of '0'..'9':
                     var lit = ""
@@ -257,10 +263,6 @@ proc PreProcess(bytecode: var Bytecode, tokens: var seq[Token]) =
             lineNum.inc()
             CurrentFilePosition.SetCurrentLine(uint(lineNum))
 
-        # Skip Comments
-        elif token.typ == tkComment:
-            if globals.VerboseOutput: LogDebug("Skiped Comment!", true)
-
         # Handle Preprocessor Anutations
         elif token.typ == tkPreprocessorAnutation:
             # Get the next Token
@@ -300,6 +302,7 @@ proc PreProcess(bytecode: var Bytecode, tokens: var seq[Token]) =
             else:
                 LogError("Unknown Identifier \"$#\"" % nextToken.value)
                 quit(1)
+
         index.inc()
 
 proc ParseString(bytecode: var Bytecode, str: string) =
@@ -381,13 +384,21 @@ proc ParseLabels(bytecode: var Bytecode, tokens: var seq[Token]) =
         elif token.typ == tkIdentifier:
             # Skip Instruction
             if instType != INST_ERROR:
+                    if index+1 >= tokens.len:
+                        LogError("Expected operand after instruction \"$#\"" % token.value, true)
+                        quit(1)
+
+                    var nextToken = tokens[index+1]
+
+                    # If next token is Colon, Register new Label
+                    if nextToken.typ == tkColon:
+                        LogError("\"$#\" is a Instruction name and can't be used as a label name!" % token.value, true)
+                        quit(1)
+
                     if instType.takesOperand():
-                        if index+1 >= tokens.len:
-                            LogError("Expected operand after instruction \"$#\"" % token.value, true)
-                            quit(1)
 
                         index.inc()
-                        var nextToken = tokens[index]
+                        nextToken = tokens[index]
 
                         if nextToken.typ == tkString:
                             bytecode.ParseString(nextToken.value)
@@ -499,7 +510,14 @@ proc Compile(bytecode: var Bytecode, tokens: seq[Token]) =
                     
                     # Handle String operand
                     elif operandToken.typ == tkString:
-                        bytecode.ParseString(operandToken.value)
+                        if instType == INST_PUSH:
+                            bytecode.ParseString(operandToken.value)
+                        else:
+                            LogError("\"$#\" Unexpected operand type!\nExpected one of type Int, Float, Char or FSOperator. Not String" % token.value, true)
+                            quit(1)
+
+                    elif operandToken.typ == tkFSOperator:
+                        bytecode.code.add(NewInst(instType, NewFromStackWord()))
                     
                     # Handle Identifier operand
                     elif operandToken.typ == tkIdentifier:
@@ -515,8 +533,12 @@ proc Compile(bytecode: var Bytecode, tokens: seq[Token]) =
                             if labelAddress >= 0:
                                 bytecode.code.add(NewInst(instType, NewWord(labelAddress)))
                             else:
-                                LogError("Expected operand after instruction \"$#\"" % token.value, true)
-                                quit(1)
+                                if GetInstTypeByName(operandToken.value) != INST_ERROR:
+                                    LogError("\"$#\" is an Instruction name and can't be used as an operator!" % operandToken.value, true)
+                                    quit(1)
+                                else:
+                                    LogError("\"$#\" is not a valid Label name and can't be used as an operator!" % operandToken.value, true)
+                                    quit(1)
                     else:
                         LogError("Expected operand after instruction \"$#\"" % token.value, true)
                         quit(1)
